@@ -1,0 +1,13 @@
+# Ignore all
+*
+
+# Except these ...
+!.gitignore
+
+!*.py
+!*.sh
+!*.md
+
+
+# ...even if they are in subdirectories
+!*/
