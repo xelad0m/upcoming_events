@@ -1,14 +1,43 @@
 """
 Сравнение скорости парсинга HTML
-# (pypy3) mytree to parse https://www.youtube.com/ etree 10 times takes 0.532 seconds (0.053 sec. in average)
-# lxml etree (SAX) is the fastest, but due to profiler it do nothing (4-5 calls)"""
+$ python test_mytree.py
+
+Number of parse loops per page:  10
+No   Parser                   Total time (s)    Avg time (s)     Memory for tree (Kb)
+--------------------------------------------------------------------------------
+https://www.youtube.com/
+1   mytree (DOM)                   0.105          0.010         2320.8
+2   lxml etree (SAX)               0.111          0.011            0.1
+3   bs4+lxml (DOM)                 0.215          0.022         2106.1
+4   html5lib (SAX)                 0.654          0.065            0.1
+https://wikipedia.org/
+1   lxml etree (SAX)               0.030          0.003            0.1
+2   mytree (DOM)                   0.187          0.019          718.8
+3   bs4+lxml (DOM)                 0.343          0.034          193.1
+4   html5lib (SAX)                 0.613          0.061            0.1
+https://9gag.com/
+1   lxml etree (SAX)               0.007          0.001            0.1
+2   mytree (DOM)                   0.014          0.001          104.6
+3   bs4+lxml (DOM)                 0.032          0.003          132.1
+4   html5lib (SAX)                 0.072          0.007            0.1
+--------------------------------------------------------------------------------
+Total:
+1   lxml etree (SAX)               0.148          0.015            0.2
+2   mytree (DOM)                   0.306          0.031         3144.2
+3   bs4+lxml (DOM)                 0.590          0.059         2431.3
+4   html5lib (SAX)                 1.340          0.134            0.4
+
+*) lxml выигрывает т.к. (SAX) 
+   - узлы документа не являются поддеревьями
+   - ничего не хранится в памяти
+**) html5lib - любопытно, чем он занимается столько времени, используя lxml.etree
+
+"""
 
 
-from . import mytree.TreeBuilder as tb
+from mytree import TreeBuilder as tb
 from bs4 import BeautifulSoup as bs
 from lxml import etree as et
-
-
 
 import html5lib
 
@@ -26,11 +55,12 @@ URLs = ['https://www.youtube.com/',
 def _bs(data):
     return bs(data, 'lxml')
 
-parsers = {'bs4+lxml (DOM)': _bs, 'lxml etree (SAX)': et.HTML, 'html5lib (SAX?)': html5lib.parse, 'mytree (DOM)': tb}
+parsers = {'bs4+lxml (DOM)': _bs, 'lxml etree (SAX)': et.HTML, 'html5lib (SAX)': html5lib.parse, 'mytree (DOM)': tb}
 
 def evaluate(report):
     for url in URLs:
-        headers = {'Accept-Encoding': 'identity'}                   # to recieve not compressed html
+        headers = {'User-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36',
+                   'Accept-Encoding': 'identity'}                   # to recieve not compressed html
         try:
             r = requests.get(url=url, headers=headers)
         except:
